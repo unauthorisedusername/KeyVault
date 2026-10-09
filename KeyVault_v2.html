@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'">
+<title>KeyVault (Offline)</title>
+<style>
+:root{--bg:#f4f5f7;--card:#fff;--text:#1b1f27;--muted:#667085;--line:#e1e4ea;--accent:#2f6fed;--accent-t:#fff;--danger:#d92d20;--ok:#12a150;--warn:#d99100;box-sizing:border-box}
+@media (prefers-color-scheme:dark){:root{--bg:#111318;--card:#1a1d24;--text:#e8eaf0;--muted:#98a0b3;--line:#2a2f3a;--accent:#5b8cff;--accent-t:#0b1020;--danger:#ff6b5e;--ok:#3ccf7e;--warn:#f0b429}}
+*,*::before,*::after{box-sizing:inherit}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--text);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.hidden{display:none!important}
+main{max-width:720px;margin:0 auto;padding:24px 16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px}
+h1{font-size:22px;margin:0 0 4px}h2{font-size:18px;margin:0 0 12px}
+.sub{color:var(--muted);margin:0 0 18px}
+label{display:block;font-size:13px;color:var(--muted);margin:12px 0 4px}
+input[type=text],input[type=password],input[type=search],textarea,select{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:9px;background:var(--bg);color:var(--text);font:inherit}
+textarea{resize:vertical;min-height:70px}
+input:focus,textarea:focus,select:focus,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+button{font:inherit;padding:9px 14px;border-radius:9px;border:1px solid var(--line);background:var(--card);color:var(--text);cursor:pointer}
+button:hover{border-color:var(--accent)}
+button:disabled{opacity:.5;cursor:not-allowed}
+button.primary{background:var(--accent);color:var(--accent-t);border-color:var(--accent);font-weight:600}
+button.danger{color:var(--danger)}
+button.small{padding:5px 9px;font-size:13px}
+.row{display:flex;gap:10px;align-items:center}
+.row.wrap{flex-wrap:wrap}
+.grow{flex:1}
+.stack{display:grid;gap:10px}
+.drop{border:2px dashed var(--line);border-radius:12px;padding:22px;text-align:center;color:var(--muted)}
+.drop.over{border-color:var(--accent);color:var(--accent)}
+.meter{height:6px;border-radius:3px;background:var(--line);margin-top:6px;overflow:hidden}
+.meter>i{display:block;height:100%;width:0;transition:width .2s,background .2s}
+.hint{font-size:12px;color:var(--muted);margin-top:4px;min-height:16px}
+.err{color:var(--danger);font-size:13px;margin-top:8px;min-height:18px}
+.bar{display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
+.badge{font-size:12px;padding:3px 9px;border-radius:99px;border:1px solid var(--line);color:var(--muted)}
+.badge.dirty{color:var(--warn);border-color:var(--warn)}
+.badge.clean{color:var(--ok);border-color:var(--ok)}
+.entry{display:flex;gap:10px;align-items:center;padding:12px;border:1px solid var(--line);border-radius:11px;margin-bottom:8px;background:var(--card);cursor:pointer}
+.entry:hover{border-color:var(--accent)}
+.entry .t{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.entry .u{color:var(--muted);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.entry .meta{min-width:0;flex:1}
+.empty{text-align:center;color:var(--muted);padding:32px 0}
+dialog{border:1px solid var(--line);border-radius:14px;background:var(--card);color:var(--text);padding:22px;width:min(480px,94vw);max-height:92vh;overflow:auto}
+dialog::backdrop{background:rgba(0,0,0,.5)}
+details{margin-top:10px;border:1px solid var(--line);border-radius:9px;padding:8px 12px}
+summary{cursor:pointer;color:var(--muted);font-size:13px}
+.chk{display:flex;gap:6px;align-items:center;font-size:13px;color:var(--text);margin:6px 12px 0 0}
+.chk input{margin:0}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--text);color:var(--bg);padding:9px 16px;border-radius:9px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s;max-width:90vw}
+#toast.on{opacity:1}
+.tile{display:block;width:100%;text-align:left;padding:18px}.tile b{display:block;font-size:17px;margin-bottom:2px}.tile span{color:var(--muted);font-size:13px}
+.warn{border:1px solid var(--warn);color:var(--warn);border-radius:9px;padding:8px 12px;font-size:13px;margin-bottom:12px}
+.note-snip{color:var(--muted);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.foot{text-align:center;color:var(--muted);font-size:12px;margin-top:18px}
+</style>
+</head>
+<body>
+<main>
+
+<!-- HOME -->
+<section id="home" class="card">
+  <h1>KeyVault</h1>
+  <p class="sub">Choose what to open.</p>
+  <div class="stack">
+    <button class="tile" id="goNotes"><b>Notes</b><span>Plain notes. Not encrypted.</span></button>
+    <button class="tile" id="goPass"><b>Passwords</b><span>Encrypted vault. Needs master password.</span></button>
+  </div>
+</section>
+
+<!-- NOTES -->
+<section id="notes" class="hidden">
+  <div class="bar">
+    <h2 style="margin:0" class="grow">Notes</h2>
+    <button id="nExport">Export</button>
+    <button id="nImport">Import</button>
+    <input type="file" id="nFile" accept=".json,application/json" class="hidden">
+    <button id="nHome">Home</button>
+  </div>
+  <div class="warn">Notes are not encrypted. Do not store passwords or card numbers here.</div>
+  <div class="row" style="margin-bottom:14px">
+    <input type="search" id="nSearch" placeholder="Search notes" class="grow" aria-label="Search notes">
+    <button id="nAdd" class="primary">Add</button>
+  </div>
+  <div id="nList"></div>
+</section>
+
+<!-- START -->
+<section id="start" class="card hidden">
+  <h1>KeyVault</h1>
+  <p class="sub">Offline encrypted vault. Everything stays in your browser and in your .key file.</p>
+  <div class="stack">
+    <button class="primary" id="btnNew">Create new vault</button>
+    <div class="drop" id="drop">
+      <div>Drop a <b>.key</b> file here</div>
+      <div style="margin:8px 0">or</div>
+      <button id="btnOpen">Open .key file</button>
+      <input type="file" id="fileIn" accept=".key,application/json" class="hidden">
+    </div>
+  </div>
+  <div class="err" id="startErr" role="alert"></div>
+  <button id="startHome">Back</button>
+</section>
+
+<!-- SETUP -->
+<section id="setup" class="card hidden">
+  <h2>Create master password</h2>
+  <p class="sub">Minimum 12 characters. It cannot be recovered if forgotten.</p>
+  <label for="npw">Master password</label>
+  <input type="password" id="npw" autocomplete="new-password">
+  <div class="meter"><i id="nmeter"></i></div>
+  <div class="hint" id="nhint"></div>
+  <label for="npw2">Confirm password</label>
+  <input type="password" id="npw2" autocomplete="new-password">
+  <div class="err" id="setupErr" role="alert"></div>
+  <div class="row" style="margin-top:12px">
+    <button id="setupBack">Back</button>
+    <button class="primary grow" id="setupGo">Create vault</button>
+  </div>
+</section>
+
+<!-- UNLOCK -->
+<section id="unlock" class="card hidden">
+  <h2>Unlock vault</h2>
+  <p class="sub" id="unlockFile"></p>
+  <label for="upw">Master password</label>
+  <input type="password" id="upw" autocomplete="current-password">
+  <div class="err" id="unlockErr" role="alert"></div>
+  <div class="row" style="margin-top:12px">
+    <button id="unlockBack">Close vault</button>
+    <button class="primary grow" id="unlockGo">Unlock</button>
+  </div>
+</section>
+
+<!-- VAULT -->
+<section id="vault" class="hidden">
+  <div class="bar">
+    <h2 style="margin:0" class="grow" id="vname">Vault</h2>
+    <span class="badge" id="dirtyBadge">Saved</span>
+    <button id="btnSave" class="primary">Save .key</button>
+    <button id="btnSettings">Settings</button>
+    <button id="btnLock">Lock</button>
+    <button id="btnHome">Home</button>
+  </div>
+  <div class="row" style="margin-bottom:14px">
+    <input type="search" id="search" placeholder="Search site, username, notes" class="grow" aria-label="Search">
+    <button id="btnAdd" class="primary">Add</button>
+  </div>
+  <div id="list"></div>
+</section>
+
+<div class="foot">Works offline. Nothing is uploaded anywhere.</div>
+</main>
+
+<!-- ENTRY DIALOG -->
+<dialog id="entryDlg">
+  <h2 id="entryTitle">Entry</h2>
+  <label for="fSite">Site</label>
+  <input type="text" id="fSite" autocomplete="off">
+  <label for="fUser">Username / email</label>
+  <input type="text" id="fUser" autocomplete="off">
+  <label for="fPass">Password</label>
+  <div class="row">
+    <input type="password" id="fPass" class="grow" autocomplete="new-password">
+    <button id="fShow" class="small">Show</button>
+    <button id="fGen" class="small">Generate</button>
+  </div>
+  <div class="meter"><i id="fmeter"></i></div>
+  <details>
+    <summary>Generator options</summary>
+    <div class="row" style="margin-top:8px">
+      <label for="gLen" style="margin:0">Length: <b id="gLenV">20</b></label>
+      <input type="range" id="gLen" min="8" max="64" value="20" class="grow">
+    </div>
+    <div class="row wrap">
+      <label class="chk"><input type="checkbox" id="gUp" checked>A-Z</label>
+      <label class="chk"><input type="checkbox" id="gLow" checked>a-z</label>
+      <label class="chk"><input type="checkbox" id="gNum" checked>0-9</label>
+      <label class="chk"><input type="checkbox" id="gSym" checked>Symbols</label>
+    </div>
+  </details>
+  <label for="fNotes">Notes</label>
+  <textarea id="fNotes"></textarea>
+  <div class="err" id="entryErr" role="alert"></div>
+  <div class="row" style="margin-top:12px">
+    <button id="fDel" class="danger">Delete</button>
+    <span class="grow"></span>
+    <button id="fCancel">Cancel</button>
+    <button id="fSave" class="primary">OK</button>
+  </div>
+</dialog>
+
+<!-- NOTE DIALOG -->
+<dialog id="noteDlg">
+  <h2 id="noteHead">Note</h2>
+  <label for="nTitle">Title</label>
+  <input type="text" id="nTitle" autocomplete="off">
+  <label for="nText">Note</label>
+  <textarea id="nText" style="min-height:180px"></textarea>
+  <div class="err" id="noteErr" role="alert"></div>
+  <div class="row" style="margin-top:12px">
+    <button id="nDel" class="danger">Delete</button>
+    <span class="grow"></span>
+    <button id="nCancel">Cancel</button>
+    <button id="nSave" class="primary">OK</button>
+  </div>
+</dialog>
+
+<!-- SETTINGS DIALOG -->
+<dialog id="setDlg">
+  <h2>Settings</h2>
+  <label for="sLock">Auto-lock after inactivity</label>
+  <select id="sLock">
+    <option value="1">1 minute</option>
+    <option value="5">5 minutes</option>
+    <option value="15">15 minutes</option>
+    <option value="30">30 minutes</option>
+    <option value="0">Never</option>
+  </select>
+  <h2 style="margin-top:22px">Change master password</h2>
+  <label for="cpOld">Current password</label>
+  <input type="password" id="cpOld" autocomplete="current-password">
+  <label for="cpNew">New password</label>
+  <input type="password" id="cpNew" autocomplete="new-password">
+  <div class="meter"><i id="cmeter"></i></div>
+  <label for="cpNew2">Confirm new password</label>
+  <input type="password" id="cpNew2" autocomplete="new-password">
+  <div class="err" id="setErr" role="alert"></div>
+  <div class="row" style="margin-top:12px">
+    <button id="cpGo">Change password</button>
+    <span class="grow"></span>
+    <button id="setClose" class="primary">Done</button>
+  </div>
+</dialog>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(() => {
+'use strict';
+
+/* ---------- helpers ---------- */
+const $ = s => document.querySelector(s);
+const enc = new TextEncoder(), dec = new TextDecoder();
+const ITER = 600000, MIN_PW = 12, CLIP_MS = 30000;
+const toB64 = buf => { const u = new Uint8Array(buf); let s = ''; for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000)); return btoa(s); };
+const fromB64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+const rnd = n => crypto.getRandomValues(new Uint8Array(n));
+const uuid = () => (crypto.randomUUID ? crypto.randomUUID() : toB64(rnd(16)));
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+function el(tag, props = {}, ...kids) {
+  const e = document.createElement(tag);
+  for (const k in props) { if (k === 'class') e.className = props[k]; else if (k.startsWith('on')) e.addEventListener(k.slice(2), props[k]); else e.setAttribute(k, props[k]); }
+  kids.forEach(c => e.append(c));
+  return e;
+}
+
+let toastT;
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), 2200); }
+
+/* ---------- crypto ---------- */
+async function derive(pw, salt, iter) {
+  const km = await crypto.subtle.importKey('raw', enc.encode(pw), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey({ name: 'PBKDF2', hash: 'SHA-256', salt, iterations: iter }, km, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+}
+async function seal(data, pw) {
+  const salt = rnd(16), iv = rnd(12);
+  const key = await derive(pw, salt, ITER);
+  const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, enc.encode(JSON.stringify(data)));
+  return { app: 'keyvault', version: 1,
+    kdf: { name: 'PBKDF2', hash: 'SHA-256', iterations: ITER, salt: toB64(salt) },
+    cipher: { name: 'AES-256-GCM', iv: toB64(iv) },
+    data: toB64(ct) };
+}
+function validFile(f) {
+  return f && f.app === 'keyvault' && f.version === 1 && f.kdf && f.kdf.name === 'PBKDF2' && f.kdf.hash === 'SHA-256'
+    && Number.isInteger(f.kdf.iterations) && f.kdf.iterations >= 100000 && f.kdf.iterations <= 5000000
+    && typeof f.kdf.salt === 'string' && f.cipher && typeof f.cipher.iv === 'string' && typeof f.data === 'string';
+}
+async function open(f, pw) {
+  const key = await derive(pw, fromB64(f.kdf.salt), f.kdf.iterations);
+  const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: fromB64(f.cipher.iv) }, key, fromB64(f.data));
+  return JSON.parse(dec.decode(pt));
+}
+
+/* ---------- state ---------- */
+const S = { entries: [], settings: { autoLock: 5 }, pw: null, fileObj: null, fileName: 'myvault.key', dirty: false, editId: null, fails: 0 };
+
+function show(id) {
+  ['home', 'notes', 'start', 'setup', 'unlock', 'vault'].forEach(s => $('#' + s).classList.toggle('hidden', s !== id));
+  if (id === 'vault') armLock(); else clearTimeout(lockT);
+}
+
+/* ---------- strength ---------- */
+function strength(pw) {
+  let c = 0;
+  if (/[a-z]/.test(pw)) c += 26; if (/[A-Z]/.test(pw)) c += 26; if (/\d/.test(pw)) c += 10; if (/[^A-Za-z0-9]/.test(pw)) c += 32;
+  const bits = pw.length * Math.log2(c || 1);
+  const score = Math.max(0, Math.min(1, bits / 90));
+  const label = bits < 40 ? 'Weak' : bits < 60 ? 'Fair' : bits < 80 ? 'Good' : 'Strong';
+  const color = bits < 40 ? 'var(--danger)' : bits < 60 ? 'var(--warn)' : 'var(--ok)';
+  return { score, label, color };
+}
+function meter(inputSel, meterSel, hintSel) {
+  $(inputSel).addEventListener('input', () => {
+    const v = $(inputSel).value, s = strength(v), m = $(meterSel);
+    m.style.width = v ? Math.round(s.score * 100) + '%' : '0';
+    m.style.background = s.color;
+    if (hintSel) $(hintSel).textContent = v ? s.label + (v.length < MIN_PW ? ` (${v.length}/${MIN_PW} characters)` : '') : '';
+  });
+}
+meter('#npw', '#nmeter', '#nhint');
+meter('#fPass', '#fmeter');
+meter('#cpNew', '#cmeter');
+
+/* ---------- start / import ---------- */
+$('#btnNew').onclick = () => { $('#npw').value = $('#npw2').value = ''; $('#nmeter').style.width = '0'; $('#nhint').textContent = ''; $('#setupErr').textContent = ''; show('setup'); $('#npw').focus(); };
+$('#btnOpen').onclick = () => $('#fileIn').click();
+$('#fileIn').onchange = e => { if (e.target.files[0]) readFile(e.target.files[0]); e.target.value = ''; };
+const drop = $('#drop');
+['dragenter', 'dragover'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('over'); }));
+['dragleave', 'drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('over'); }));
+drop.addEventListener('drop', e => { const f = e.dataTransfer.files[0]; if (f) readFile(f); });
+window.addEventListener('dragover', e => e.preventDefault());
+window.addEventListener('drop', e => e.preventDefault());
+
+async function readFile(file) {
+  $('#startErr').textContent = '';
+  if (file.size > 20 * 1024 * 1024) { $('#startErr').textContent = 'File too large.'; return; }
+  try {
+    const obj = JSON.parse(await file.text());
+    if (!validFile(obj)) throw 0;
+    S.fileObj = obj; S.fileName = file.name || 'myvault.key'; S.dirty = false; S.fails = 0;
+    $('#unlockFile').textContent = S.fileName;
+    $('#upw').value = ''; $('#unlockErr').textContent = '';
+    show('unlock'); $('#upw').focus();
+  } catch { $('#startErr').textContent = 'Not a valid KeyVault .key file.'; }
+}
+
+/* ---------- setup ---------- */
+$('#setupBack').onclick = () => show('start');
+$('#setupGo').onclick = () => {
+  const a = $('#npw').value, b = $('#npw2').value, err = $('#setupErr');
+  if (a.length < MIN_PW) { err.textContent = `Use at least ${MIN_PW} characters.`; return; }
+  if (a !== b) { err.textContent = 'Passwords do not match.'; return; }
+  S.pw = a; S.entries = []; S.settings = { autoLock: 5 }; S.fileObj = null; S.fileName = 'myvault.key'; S.dirty = true;
+  $('#npw').value = $('#npw2').value = '';
+  enterVault();
+};
+$('#npw2').addEventListener('keydown', e => { if (e.key === 'Enter') $('#setupGo').click(); });
+
+/* ---------- unlock with delay on failures ---------- */
+$('#unlockBack').onclick = () => { S.fileObj = null; S.entries = []; S.pw = null; S.dirty = false; show('start'); };
+$('#upw').addEventListener('keydown', e => { if (e.key === 'Enter') $('#unlockGo').click(); });
+$('#unlockGo').onclick = async () => {
+  const btn = $('#unlockGo'), err = $('#unlockErr'), pw = $('#upw').value;
+  if (!pw) return;
+  btn.disabled = true; err.textContent = 'Unlocking...';
+  try {
+    const d = await open(S.fileObj, pw);
+    S.entries = Array.isArray(d.entries) ? d.entries : [];
+    S.settings = Object.assign({ autoLock: 5 }, d.settings || {});
+    S.pw = pw; S.fails = 0; $('#upw').value = ''; err.textContent = '';
+    enterVault();
+  } catch {
+    S.fails++;
+    const delay = Math.min(30, Math.pow(2, S.fails - 1));
+    for (let i = delay; i > 0; i--) { err.textContent = `Wrong password or damaged file. Wait ${i}s.`; await sleep(1000); }
+    err.textContent = 'Wrong password or damaged file.';
+  }
+  btn.disabled = false;
+};
+
+/* ---------- vault ---------- */
+function enterVault() {
+  $('#vname').textContent = S.fileName;
+  $('#search').value = '';
+  show('vault'); render(); updateDirty();
+}
+function updateDirty() {
+  const b = $('#dirtyBadge');
+  b.textContent = S.dirty ? 'Unsaved changes' : 'Saved';
+  b.className = 'badge ' + (S.dirty ? 'dirty' : 'clean');
+}
+function render() {
+  const q = $('#search').value.trim().toLowerCase(), list = $('#list');
+  list.replaceChildren();
+  const items = S.entries.filter(e => !q || [e.site, e.username, e.notes].some(v => (v || '').toLowerCase().includes(q)))
+    .sort((a, b) => (a.site || '').localeCompare(b.site || ''));
+  if (!items.length) { list.append(el('div', { class: 'empty' }, S.entries.length ? 'No matches.' : 'No entries yet. Click Add.')); return; }
+  items.forEach(e => {
+    const row = el('div', { class: 'entry', tabindex: '0', onclick: () => openEntry(e.id), onkeydown: ev => { if (ev.key === 'Enter') openEntry(e.id); } },
+      el('div', { class: 'meta' }, el('div', { class: 't' }, e.site || '(no site)'), el('div', { class: 'u' }, e.username || '')),
+      el('button', { class: 'small', onclick: ev => { ev.stopPropagation(); copy(e.username, 'Username'); } }, 'User'),
+      el('button', { class: 'small', onclick: ev => { ev.stopPropagation(); copy(e.password, 'Password'); } }, 'Pass'));
+    list.append(row);
+  });
+}
+$('#search').addEventListener('input', render);
+
+let clipT;
+async function copy(text, what) {
+  if (!text) { toast('Nothing to copy'); return; }
+  try { await navigator.clipboard.writeText(text); } catch { toast('Copy blocked by browser'); return; }
+  toast(what + ' copied. Clears in 30s');
+  clearTimeout(clipT);
+  clipT = setTimeout(() => { navigator.clipboard.writeText('').catch(() => {}); }, CLIP_MS);
+}
+
+/* ---------- entry dialog ---------- */
+const dlg = $('#entryDlg');
+function openEntry(id) {
+  S.editId = id || null;
+  const e = id ? S.entries.find(x => x.id === id) : { site: '', username: '', password: '', notes: '' };
+  $('#entryTitle').textContent = id ? 'Edit entry' : 'New entry';
+  $('#fSite').value = e.site || ''; $('#fUser').value = e.username || '';
+  $('#fPass').value = e.password || ''; $('#fNotes').value = e.notes || '';
+  $('#fPass').type = 'password'; $('#fShow').textContent = 'Show';
+  $('#fPass').dispatchEvent(new Event('input'));
+  $('#entryErr').textContent = '';
+  $('#fDel').classList.toggle('hidden', !id);
+  dlg.showModal(); $('#fSite').focus();
+}
+$('#btnAdd').onclick = () => openEntry();
+$('#fCancel').onclick = () => dlg.close();
+$('#fShow').onclick = () => { const p = $('#fPass'), s = p.type === 'password'; p.type = s ? 'text' : 'password'; $('#fShow').textContent = s ? 'Hide' : 'Show'; };
+$('#fGen').onclick = () => {
+  const p = genPass(); if (!p) { $('#entryErr').textContent = 'Select at least one character type.'; return; }
+  $('#entryErr').textContent = ''; $('#fPass').value = p; $('#fPass').type = 'text'; $('#fShow').textContent = 'Hide';
+  $('#fPass').dispatchEvent(new Event('input'));
+};
+$('#gLen').oninput = () => $('#gLenV').textContent = $('#gLen').value;
+function genPass() {
+  const sets = [];
+  if ($('#gUp').checked) sets.push('ABCDEFGHJKLMNPQRSTUVWXYZ');
+  if ($('#gLow').checked) sets.push('abcdefghijkmnopqrstuvwxyz');
+  if ($('#gNum').checked) sets.push('23456789');
+  if ($('#gSym').checked) sets.push('!@#$%^&*()-_=+[]{};:,.?');
+  if (!sets.length) return '';
+  const len = +$('#gLen').value, all = sets.join('');
+  const pick = str => { const max = Math.floor(0x100000000 / str.length) * str.length; let x; do { x = crypto.getRandomValues(new Uint32Array(1))[0]; } while (x >= max); return str[x % str.length]; };
+  const out = sets.map(pick);
+  while (out.length < len) out.push(pick(all));
+  for (let i = out.length - 1; i > 0; i--) { const k = rndInt(i + 1); [out[i], out[k]] = [out[k], out[i]]; }
+  return out.join('');
+}
+function rndInt(n) { const max = Math.floor(0x100000000 / n) * n; let x; do { x = crypto.getRandomValues(new Uint32Array(1))[0]; } while (x >= max); return x % n; }
+
+$('#fSave').onclick = () => {
+  const site = $('#fSite').value.trim(), pass = $('#fPass').value;
+  if (!site) { $('#entryErr').textContent = 'Site is required.'; return; }
+  const now = new Date().toISOString();
+  const data = { site, username: $('#fUser').value.trim(), password: pass, notes: $('#fNotes').value, updatedAt: now };
+  if (S.editId) Object.assign(S.entries.find(x => x.id === S.editId), data);
+  else S.entries.push(Object.assign({ id: uuid() }, data));
+  S.dirty = true; dlg.close(); render(); updateDirty();
+};
+$('#fDel').onclick = () => {
+  if (!confirm('Delete this entry?')) return;
+  S.entries = S.entries.filter(x => x.id !== S.editId);
+  S.dirty = true; dlg.close(); render(); updateDirty();
+};
+
+/* ---------- save / lock ---------- */
+$('#btnSave').onclick = async () => {
+  const btn = $('#btnSave'); btn.disabled = true;
+  try {
+    S.fileObj = await seal({ entries: S.entries, settings: S.settings }, S.pw);
+    const blob = new Blob([JSON.stringify(S.fileObj, null, 2)], { type: 'application/json' });
+    const a = el('a', { href: URL.createObjectURL(blob), download: S.fileName });
+    document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    S.dirty = false; updateDirty(); toast('Saved ' + S.fileName);
+  } catch { toast('Save failed'); }
+  btn.disabled = false;
+};
+async function lock() {
+  if (S.pw === null) return;
+  try { S.fileObj = await seal({ entries: S.entries, settings: S.settings }, S.pw); } catch { return; }
+  if (dlg.open) dlg.close(); if ($('#setDlg').open) $('#setDlg').close();
+  S.entries = []; S.pw = null;
+  $('#unlockFile').textContent = S.fileName + (S.dirty ? ' (unsaved changes kept in memory)' : '');
+  $('#upw').value = ''; $('#unlockErr').textContent = '';
+  show('unlock');
+}
+$('#btnLock').onclick = lock;
+
+let lockT;
+function armLock() {
+  clearTimeout(lockT);
+  const m = +S.settings.autoLock;
+  if (m > 0 && S.pw !== null) lockT = setTimeout(lock, m * 60000);
+}
+['mousemove', 'keydown', 'click', 'touchstart', 'scroll'].forEach(ev => window.addEventListener(ev, () => { if (!$('#vault').classList.contains('hidden')) armLock(); }, { passive: true }));
+
+window.addEventListener('beforeunload', e => { if (S.dirty) { e.preventDefault(); e.returnValue = ''; } });
+
+/* ---------- settings ---------- */
+const sdlg = $('#setDlg');
+$('#btnSettings').onclick = () => { $('#sLock').value = String(S.settings.autoLock); $('#cpOld').value = $('#cpNew').value = $('#cpNew2').value = ''; $('#cmeter').style.width = '0'; $('#setErr').textContent = ''; sdlg.showModal(); };
+$('#sLock').onchange = () => { S.settings.autoLock = +$('#sLock').value; S.dirty = true; updateDirty(); armLock(); };
+$('#setClose').onclick = () => sdlg.close();
+$('#cpGo').onclick = () => {
+  const err = $('#setErr'), o = $('#cpOld').value, n = $('#cpNew').value, n2 = $('#cpNew2').value;
+  if (o !== S.pw) { err.textContent = 'Current password is incorrect.'; return; }
+  if (n.length < MIN_PW) { err.textContent = `Use at least ${MIN_PW} characters.`; return; }
+  if (n !== n2) { err.textContent = 'New passwords do not match.'; return; }
+  S.pw = n; S.dirty = true; updateDirty();
+  $('#cpOld').value = $('#cpNew').value = $('#cpNew2').value = ''; $('#cmeter').style.width = '0';
+  err.textContent = ''; toast('Master password changed. Save the .key file');
+};
+
+/* ---------- navigation ---------- */
+$('#goPass').onclick = () => show(S.pw !== null ? 'vault' : S.fileObj ? 'unlock' : 'start');
+$('#goNotes').onclick = () => { loadNotes(); $('#nSearch').value = ''; renderNotes(); show('notes'); };
+$('#startHome').onclick = () => show('home');
+$('#nHome').onclick = () => show('home');
+$('#btnHome').onclick = async () => { await lock(); show('home'); };
+
+/* ---------- notes (plain, not encrypted) ---------- */
+const NK = 'keyvault_notes_v1';
+let notes = [], noteId = null;
+function loadNotes() { try { const a = JSON.parse(localStorage.getItem(NK) || '[]'); notes = Array.isArray(a) ? a : []; } catch { notes = []; } }
+function saveNotes() { try { localStorage.setItem(NK, JSON.stringify(notes)); } catch { toast('Could not save notes in this browser. Use Export'); } }
+function renderNotes() {
+  const q = $('#nSearch').value.trim().toLowerCase(), list = $('#nList');
+  list.replaceChildren();
+  const items = notes.filter(n => !q || (n.title || '').toLowerCase().includes(q) || (n.text || '').toLowerCase().includes(q))
+    .sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''));
+  if (!items.length) { list.append(el('div', { class: 'empty' }, notes.length ? 'No matches.' : 'No notes yet. Click Add.')); return; }
+  items.forEach(n => list.append(el('div', { class: 'entry', tabindex: '0', onclick: () => openNote(n.id), onkeydown: ev => { if (ev.key === 'Enter') openNote(n.id); } },
+    el('div', { class: 'meta' }, el('div', { class: 't' }, n.title || '(untitled)'), el('div', { class: 'note-snip' }, (n.text || '').split('\n')[0])))));
+}
+$('#nSearch').addEventListener('input', renderNotes);
+const ndlg = $('#noteDlg');
+function openNote(id) {
+  noteId = id || null;
+  const n = id ? notes.find(x => x.id === id) : { title: '', text: '' };
+  $('#noteHead').textContent = id ? 'Edit note' : 'New note';
+  $('#nTitle').value = n.title || ''; $('#nText').value = n.text || '';
+  $('#noteErr').textContent = ''; $('#nDel').classList.toggle('hidden', !id);
+  ndlg.showModal(); $('#nTitle').focus();
+}
+$('#nAdd').onclick = () => openNote();
+$('#nCancel').onclick = () => ndlg.close();
+$('#nSave').onclick = () => {
+  const title = $('#nTitle').value.trim(), text = $('#nText').value;
+  if (!title && !text.trim()) { $('#noteErr').textContent = 'Write something first.'; return; }
+  const now = new Date().toISOString();
+  if (noteId) Object.assign(notes.find(x => x.id === noteId), { title, text, updatedAt: now });
+  else notes.push({ id: uuid(), title, text, updatedAt: now });
+  saveNotes(); ndlg.close(); renderNotes();
+};
+$('#nDel').onclick = () => {
+  if (!confirm('Delete this note?')) return;
+  notes = notes.filter(x => x.id !== noteId); saveNotes(); ndlg.close(); renderNotes();
+};
+$('#nExport').onclick = () => {
+  const blob = new Blob([JSON.stringify({ app: 'keyvault-notes', version: 1, notes }, null, 2)], { type: 'application/json' });
+  const a = el('a', { href: URL.createObjectURL(blob), download: 'notes.json' });
+  document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+};
+$('#nImport').onclick = () => $('#nFile').click();
+$('#nFile').onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  try {
+    const o = JSON.parse(await f.text());
+    if (!o || o.app !== 'keyvault-notes' || !Array.isArray(o.notes)) throw 0;
+    let added = 0;
+    o.notes.forEach(n => {
+      if (!n || typeof n.id !== 'string') return;
+      const cur = notes.find(x => x.id === n.id);
+      const clean = { id: n.id, title: String(n.title || ''), text: String(n.text || ''), updatedAt: String(n.updatedAt || new Date().toISOString()) };
+      if (!cur) { notes.push(clean); added++; } else if (clean.updatedAt > (cur.updatedAt || '')) Object.assign(cur, clean);
+    });
+    saveNotes(); renderNotes(); toast(`Imported (${added} new)`);
+  } catch { toast('Not a valid notes.json file'); }
+};
+
+/* ---------- boot check ---------- */
+if (!(window.crypto && crypto.subtle)) {
+  $('#startErr').textContent = 'Web Crypto is unavailable here. Open via https or http://localhost.';
+  $('#btnNew').disabled = true; $('#btnOpen').disabled = true;
+}
+})();
+</script>
+</body>
+</html>
