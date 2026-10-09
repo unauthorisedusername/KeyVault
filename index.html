@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' https://accounts.google.com; style-src 'unsafe-inline' https://accounts.google.com; connect-src https://www.googleapis.com https://accounts.google.com https://oauth2.googleapis.com; frame-src https://accounts.google.com; img-src data:; base-uri 'none'; form-action 'none'">
 <title>KeyVault (Offline)</title>
 <style>
 :root{--bg:#f4f5f7;--card:#fff;--text:#1b1f27;--muted:#667085;--line:#e1e4ea;--accent:#2f6fed;--accent-t:#fff;--danger:#d92d20;--ok:#12a150;--warn:#d99100;box-sizing:border-box}
@@ -57,6 +57,7 @@ summary{cursor:pointer;color:var(--muted);font-size:13px}
 .tile{display:block;width:100%;text-align:left;padding:18px}.tile b{display:block;font-size:17px;margin-bottom:2px}.tile span{color:var(--muted);font-size:13px}
 .warn{border:1px solid var(--warn);color:var(--warn);border-radius:9px;padding:8px 12px;font-size:13px;margin-bottom:12px}
 .note-snip{color:var(--muted);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gbar{margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
 .foot{text-align:center;color:var(--muted);font-size:12px;margin-top:18px}
 </style>
 </head>
@@ -71,12 +72,14 @@ summary{cursor:pointer;color:var(--muted);font-size:13px}
     <button class="tile" id="goNotes"><b>Notes</b><span>Plain notes. Not encrypted.</span></button>
     <button class="tile" id="goPass"><b>Passwords</b><span>Encrypted vault. Needs master password.</span></button>
   </div>
+  <div class="gbar row wrap" id="gBar"></div>
 </section>
 
 <!-- NOTES -->
 <section id="notes" class="hidden">
   <div class="bar">
     <h2 style="margin:0" class="grow">Notes</h2>
+    <span class="badge" id="nSync">Local only</span>
     <button id="nExport">Export</button>
     <button id="nImport">Import</button>
     <input type="file" id="nFile" accept=".json,application/json" class="hidden">
@@ -96,6 +99,7 @@ summary{cursor:pointer;color:var(--muted);font-size:13px}
   <p class="sub">Offline encrypted vault. Everything stays in your browser and in your .key file.</p>
   <div class="stack">
     <button class="primary" id="btnNew">Create new vault</button>
+    <button id="btnDrive" class="hidden">Open vault from Google Drive</button>
     <div class="drop" id="drop">
       <div>Drop a <b>.key</b> file here</div>
       <div style="margin:8px 0">or</div>
@@ -143,6 +147,7 @@ summary{cursor:pointer;color:var(--muted);font-size:13px}
     <h2 style="margin:0" class="grow" id="vname">Vault</h2>
     <span class="badge" id="dirtyBadge">Saved</span>
     <button id="btnSave" class="primary">Save .key</button>
+    <button id="btnDl" class="hidden">Download</button>
     <button id="btnSettings">Settings</button>
     <button id="btnLock">Lock</button>
     <button id="btnHome">Home</button>
@@ -154,7 +159,7 @@ summary{cursor:pointer;color:var(--muted);font-size:13px}
   <div id="list"></div>
 </section>
 
-<div class="foot">Works offline. Nothing is uploaded anywhere.</div>
+<div class="foot">Works offline. Data goes to Google Drive only if you sign in.</div>
 </main>
 
 <!-- ENTRY DIALOG -->
@@ -290,7 +295,7 @@ async function open(f, pw) {
 }
 
 /* ---------- state ---------- */
-const S = { entries: [], settings: { autoLock: 5 }, pw: null, fileObj: null, fileName: 'myvault.key', dirty: false, editId: null, fails: 0 };
+const S = { entries: [], settings: { autoLock: 5 }, pw: null, fileObj: null, fileName: 'myvault.key', dirty: false, editId: null, fails: 0, drive: false, remoteMod: null };
 
 function show(id) {
   ['home', 'notes', 'start', 'setup', 'unlock', 'vault'].forEach(s => $('#' + s).classList.toggle('hidden', s !== id));
@@ -336,7 +341,7 @@ async function readFile(file) {
   try {
     const obj = JSON.parse(await file.text());
     if (!validFile(obj)) throw 0;
-    S.fileObj = obj; S.fileName = file.name || 'myvault.key'; S.dirty = false; S.fails = 0;
+    S.fileObj = obj; S.fileName = file.name || 'myvault.key'; S.dirty = false; S.fails = 0; S.drive = false; S.remoteMod = null;
     $('#unlockFile').textContent = S.fileName;
     $('#upw').value = ''; $('#unlockErr').textContent = '';
     show('unlock'); $('#upw').focus();
@@ -349,14 +354,14 @@ $('#setupGo').onclick = () => {
   const a = $('#npw').value, b = $('#npw2').value, err = $('#setupErr');
   if (a.length < MIN_PW) { err.textContent = `Use at least ${MIN_PW} characters.`; return; }
   if (a !== b) { err.textContent = 'Passwords do not match.'; return; }
-  S.pw = a; S.entries = []; S.settings = { autoLock: 5 }; S.fileObj = null; S.fileName = 'myvault.key'; S.dirty = true;
+  S.pw = a; S.entries = []; S.settings = { autoLock: 5 }; S.fileObj = null; S.fileName = 'myvault.key'; S.dirty = true; S.drive = false; S.remoteMod = null;
   $('#npw').value = $('#npw2').value = '';
   enterVault();
 };
 $('#npw2').addEventListener('keydown', e => { if (e.key === 'Enter') $('#setupGo').click(); });
 
 /* ---------- unlock with delay on failures ---------- */
-$('#unlockBack').onclick = () => { S.fileObj = null; S.entries = []; S.pw = null; S.dirty = false; show('start'); };
+$('#unlockBack').onclick = () => { S.drive = false; S.remoteMod = null; S.fileObj = null; S.entries = []; S.pw = null; S.dirty = false; show('start'); };
 $('#upw').addEventListener('keydown', e => { if (e.key === 'Enter') $('#unlockGo').click(); });
 $('#unlockGo').onclick = async () => {
   const btn = $('#unlockGo'), err = $('#unlockErr'), pw = $('#upw').value;
@@ -384,6 +389,7 @@ function enterVault() {
   show('vault'); render(); updateDirty();
 }
 function updateDirty() {
+  updateSaveLabel();
   const b = $('#dirtyBadge');
   b.textContent = S.dirty ? 'Unsaved changes' : 'Saved';
   b.className = 'badge ' + (S.dirty ? 'dirty' : 'clean');
@@ -468,17 +474,36 @@ $('#fDel').onclick = () => {
 };
 
 /* ---------- save / lock ---------- */
+function downloadKey(file) {
+  const blob = new Blob([JSON.stringify(file, null, 2)], { type: 'application/json' });
+  const a = el('a', { href: URL.createObjectURL(blob), download: S.fileName });
+  document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+}
+function updateSaveLabel() {
+  $('#btnSave').textContent = D.signed ? 'Save to Drive' : 'Save .key';
+  $('#btnDl').classList.toggle('hidden', !D.signed);
+}
 $('#btnSave').onclick = async () => {
   const btn = $('#btnSave'); btn.disabled = true;
   try {
-    S.fileObj = await seal({ entries: S.entries, settings: S.settings }, S.pw);
-    const blob = new Blob([JSON.stringify(S.fileObj, null, 2)], { type: 'application/json' });
-    const a = el('a', { href: URL.createObjectURL(blob), download: S.fileName });
-    document.body.append(a); a.click(); a.remove();
-    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
-    S.dirty = false; updateDirty(); toast('Saved ' + S.fileName);
-  } catch { toast('Save failed'); }
-  btn.disabled = false;
+    const file = await seal({ entries: S.entries, settings: S.settings }, S.pw);
+    if (D.signed) {
+      const ex = await dFind('vault.key');
+      if (ex) {
+        if (!S.drive) { if (!confirm('A vault already exists on Google Drive. Replace it with this one?')) return; }
+        else if (S.remoteMod && ex.modifiedTime !== S.remoteMod) { if (!confirm('The Drive vault was changed somewhere else. Overwrite it?')) return; }
+      }
+      const res = await dWrite('vault.key', JSON.stringify(file, null, 2), ex && ex.id);
+      S.remoteMod = res.modifiedTime; S.drive = true; S.fileObj = file; S.dirty = false; updateDirty(); toast('Saved to Google Drive');
+    } else {
+      S.fileObj = file; downloadKey(file); S.dirty = false; updateDirty(); toast('Saved ' + S.fileName);
+    }
+  } catch { toast(D.signed ? 'Drive save failed. Use Download' : 'Save failed'); }
+  finally { btn.disabled = false; }
+};
+$('#btnDl').onclick = async () => {
+  try { downloadKey(await seal({ entries: S.entries, settings: S.settings }, S.pw)); toast('Downloaded ' + S.fileName); } catch { toast('Download failed'); }
 };
 async function lock() {
   if (S.pw === null) return;
@@ -518,22 +543,50 @@ $('#cpGo').onclick = () => {
 
 /* ---------- navigation ---------- */
 $('#goPass').onclick = () => show(S.pw !== null ? 'vault' : S.fileObj ? 'unlock' : 'start');
-$('#goNotes').onclick = () => { loadNotes(); $('#nSearch').value = ''; renderNotes(); show('notes'); };
+$('#goNotes').onclick = () => { loadNotes(); $('#nSearch').value = ''; renderNotes(); show('notes'); setSync(D.signed ? 'Syncing...' : ''); syncNotes(); };
 $('#startHome').onclick = () => show('home');
 $('#nHome').onclick = () => show('home');
 $('#btnHome').onclick = async () => { await lock(); show('home'); };
 
 /* ---------- notes (plain, not encrypted) ---------- */
 const NK = 'keyvault_notes_v1';
-let notes = [], noteId = null;
+let notes = [], noteId = null, pushT;
 function loadNotes() { try { const a = JSON.parse(localStorage.getItem(NK) || '[]'); notes = Array.isArray(a) ? a : []; } catch { notes = []; } }
-function saveNotes() { try { localStorage.setItem(NK, JSON.stringify(notes)); } catch { toast('Could not save notes in this browser. Use Export'); } }
+function persistLocal() {
+  const cut = Date.now() - 30 * 864e5;
+  notes = notes.filter(n => !n.deleted || Date.parse(n.updatedAt) > cut);
+  try { localStorage.setItem(NK, JSON.stringify(notes)); } catch { toast('Could not save notes in this browser. Use Export'); }
+}
+function saveNotes() { persistLocal(); if (D.signed) { clearTimeout(pushT); setSync('Syncing...'); pushT = setTimeout(syncNotes, 800); } }
+function setSync(t) { $('#nSync').textContent = D.signed ? t : 'Local only'; }
+function mergeNotes(list) {
+  let added = 0;
+  list.forEach(n => {
+    if (!n || typeof n.id !== 'string') return;
+    const c = { id: n.id, title: String(n.title || ''), text: String(n.text || ''), updatedAt: String(n.updatedAt || new Date().toISOString()), deleted: !!n.deleted };
+    const cur = notes.find(x => x.id === n.id);
+    if (!cur) { notes.push(c); if (!c.deleted) added++; }
+    else if (c.updatedAt > (cur.updatedAt || '')) Object.assign(cur, c);
+  });
+  return added;
+}
+async function syncNotes() {
+  if (!D.signed) return;
+  setSync('Syncing...');
+  try {
+    const f = await dFind('notes.json');
+    if (f) { const o = JSON.parse(await dRead(f.id)); if (o && o.app === 'keyvault-notes' && Array.isArray(o.notes)) mergeNotes(o.notes); }
+    persistLocal(); renderNotes();
+    await dWrite('notes.json', JSON.stringify({ app: 'keyvault-notes', version: 1, notes }), f && f.id);
+    setSync('Drive synced');
+  } catch { setSync('Sync failed'); }
+}
 function renderNotes() {
   const q = $('#nSearch').value.trim().toLowerCase(), list = $('#nList');
   list.replaceChildren();
-  const items = notes.filter(n => !q || (n.title || '').toLowerCase().includes(q) || (n.text || '').toLowerCase().includes(q))
+  const items = notes.filter(n => !n.deleted && (!q || (n.title || '').toLowerCase().includes(q) || (n.text || '').toLowerCase().includes(q)))
     .sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''));
-  if (!items.length) { list.append(el('div', { class: 'empty' }, notes.length ? 'No matches.' : 'No notes yet. Click Add.')); return; }
+  if (!items.length) { list.append(el('div', { class: 'empty' }, notes.some(n => !n.deleted) ? 'No matches.' : 'No notes yet. Click Add.')); return; }
   items.forEach(n => list.append(el('div', { class: 'entry', tabindex: '0', onclick: () => openNote(n.id), onkeydown: ev => { if (ev.key === 'Enter') openNote(n.id); } },
     el('div', { class: 'meta' }, el('div', { class: 't' }, n.title || '(untitled)'), el('div', { class: 'note-snip' }, (n.text || '').split('\n')[0])))));
 }
@@ -559,10 +612,11 @@ $('#nSave').onclick = () => {
 };
 $('#nDel').onclick = () => {
   if (!confirm('Delete this note?')) return;
-  notes = notes.filter(x => x.id !== noteId); saveNotes(); ndlg.close(); renderNotes();
+  Object.assign(notes.find(x => x.id === noteId), { deleted: true, title: '', text: '', updatedAt: new Date().toISOString() });
+  saveNotes(); ndlg.close(); renderNotes();
 };
 $('#nExport').onclick = () => {
-  const blob = new Blob([JSON.stringify({ app: 'keyvault-notes', version: 1, notes }, null, 2)], { type: 'application/json' });
+  const blob = new Blob([JSON.stringify({ app: 'keyvault-notes', version: 1, notes: notes.filter(n => !n.deleted) }, null, 2)], { type: 'application/json' });
   const a = el('a', { href: URL.createObjectURL(blob), download: 'notes.json' });
   document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
 };
@@ -572,16 +626,107 @@ $('#nFile').onchange = async e => {
   try {
     const o = JSON.parse(await f.text());
     if (!o || o.app !== 'keyvault-notes' || !Array.isArray(o.notes)) throw 0;
-    let added = 0;
-    o.notes.forEach(n => {
-      if (!n || typeof n.id !== 'string') return;
-      const cur = notes.find(x => x.id === n.id);
-      const clean = { id: n.id, title: String(n.title || ''), text: String(n.text || ''), updatedAt: String(n.updatedAt || new Date().toISOString()) };
-      if (!cur) { notes.push(clean); added++; } else if (clean.updatedAt > (cur.updatedAt || '')) Object.assign(cur, clean);
-    });
+    const added = mergeNotes(o.notes);
     saveNotes(); renderNotes(); toast(`Imported (${added} new)`);
   } catch { toast('Not a valid notes.json file'); }
 };
+
+/* ---------- Google Drive ---------- */
+const CLIENT_ID = '113804984794-ovpvcko00gmc189h7afst5ro8s1kjtib.apps.googleusercontent.com';
+const SCOPE = 'https://www.googleapis.com/auth/drive.appdata';
+const FILES = 'https://www.googleapis.com/drive/v3/files';
+const D = { token: null, exp: 0, client: null, pending: null, signed: false, email: '' };
+const driveOK = location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+
+function loadGIS() {
+  return new Promise((res, rej) => {
+    if (window.google && google.accounts && google.accounts.oauth2) return res();
+    const sc = el('script', { src: 'https://accounts.google.com/gsi/client', async: '' });
+    sc.onload = () => res(); sc.onerror = () => rej(new Error('gis'));
+    document.head.append(sc);
+  });
+}
+function requestToken(prompt) {
+  return loadGIS().then(() => new Promise((res, rej) => {
+    D.pending = { res, rej };
+    if (!D.client) D.client = google.accounts.oauth2.initTokenClient({
+      client_id: CLIENT_ID, scope: SCOPE,
+      callback: r => {
+        const p = D.pending; if (!p) return; D.pending = null;
+        if (r.error || !google.accounts.oauth2.hasGrantedAllScopes(r, SCOPE)) { p.rej(new Error(r.error || 'scope')); return; }
+        D.token = r.access_token; D.exp = Date.now() + (Number(r.expires_in) - 60) * 1000; p.res();
+      },
+      error_callback: e => { const p = D.pending; D.pending = null; if (p) p.rej(new Error((e && e.type) || 'popup')); }
+    });
+    D.client.requestAccessToken({ prompt });
+  }));
+}
+async function ensureToken() {
+  if (D.token && Date.now() < D.exp) return;
+  try { await requestToken(''); }
+  catch (e) { D.token = null; D.signed = false; S.drive = false; renderAuth(); updateSaveLabel(); toast('Google session expired. Sign in again'); throw e; }
+}
+async function api(url, opts = {}, retry = true) {
+  await ensureToken();
+  const r = await fetch(url, Object.assign({}, opts, { headers: Object.assign({}, opts.headers || {}, { Authorization: 'Bearer ' + D.token }) }));
+  if (r.status === 401 && retry) { D.token = null; return api(url, opts, false); }
+  if (!r.ok) throw new Error('drive ' + r.status);
+  return r;
+}
+async function dFind(name) {
+  const q = encodeURIComponent(`name='${name}' and trashed=false`);
+  const j = await (await api(`${FILES}?spaces=appDataFolder&q=${q}&fields=files(id,modifiedTime)&pageSize=1`)).json();
+  return (j.files && j.files[0]) || null;
+}
+async function dRead(id) { return (await api(`${FILES}/${id}?alt=media`)).text(); }
+async function dWrite(name, text, id) {
+  if (id) {
+    return (await api(`https://www.googleapis.com/upload/drive/v3/files/${id}?uploadType=media&fields=id,modifiedTime`,
+      { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: text })).json();
+  }
+  const bd = 'kv' + toB64(rnd(12)).replace(/[^A-Za-z0-9]/g, '');
+  const body = `--${bd}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify({ name, parents: ['appDataFolder'] })}\r\n--${bd}\r\nContent-Type: application/json\r\n\r\n${text}\r\n--${bd}--`;
+  return (await api('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,modifiedTime',
+    { method: 'POST', headers: { 'Content-Type': 'multipart/related; boundary=' + bd }, body })).json();
+}
+
+async function signIn() {
+  try {
+    await requestToken('select_account');
+    D.signed = true;
+    try { const j = await (await api('https://www.googleapis.com/drive/v3/about?fields=user(emailAddress)')).json(); D.email = j.user.emailAddress; } catch { D.email = ''; }
+    renderAuth(); updateSaveLabel(); toast('Signed in');
+  } catch { toast('Sign-in failed or cancelled'); }
+}
+function signOut() {
+  try { if (D.token && window.google) google.accounts.oauth2.revoke(D.token, () => {}); } catch {}
+  D.token = null; D.signed = false; D.email = ''; S.drive = false; S.remoteMod = null;
+  clearTimeout(pushT); setSync('');
+  renderAuth(); updateSaveLabel(); toast('Signed out');
+}
+function renderAuth() {
+  const bar = $('#gBar'); bar.replaceChildren();
+  if (!driveOK) bar.append(el('span', { class: 'sub', style: 'margin:0' }, 'Google sign-in works only on the website link.'));
+  else if (!D.signed) bar.append(el('button', { onclick: signIn }, 'Sign in with Google'), el('span', { class: 'hint grow' }, 'Optional. Syncs Notes and Passwords to your Google Drive.'));
+  else bar.append(el('span', { class: 'grow' }, 'Signed in' + (D.email ? ' as ' + D.email : '')), el('button', { class: 'small', onclick: signOut }, 'Sign out'));
+  $('#btnDrive').classList.toggle('hidden', !D.signed);
+}
+$('#btnDrive').onclick = async () => {
+  const err = $('#startErr'); err.textContent = '';
+  try {
+    const f = await dFind('vault.key');
+    if (!f) { err.textContent = 'No vault on Google Drive yet. Create a new vault.'; return; }
+    const obj = JSON.parse(await dRead(f.id));
+    if (!validFile(obj)) throw 0;
+    S.fileObj = obj; S.fileName = 'vault.key'; S.drive = true; S.remoteMod = f.modifiedTime; S.dirty = false; S.fails = 0;
+    $('#unlockFile').textContent = 'Google Drive: vault.key';
+    $('#upw').value = ''; $('#unlockErr').textContent = '';
+    show('unlock'); $('#upw').focus();
+  } catch { err.textContent = 'Could not read the vault from Google Drive.'; }
+};
+
+renderAuth();
+updateSaveLabel();
 
 /* ---------- boot check ---------- */
 if (!(window.crypto && crypto.subtle)) {
