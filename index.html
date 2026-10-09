@@ -4,73 +4,161 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' https://accounts.google.com; style-src 'unsafe-inline' https://accounts.google.com; connect-src https://www.googleapis.com https://accounts.google.com https://oauth2.googleapis.com; frame-src https://accounts.google.com; img-src data:; base-uri 'none'; form-action 'none'">
-<title>KeyVault (Offline)</title>
+<meta name="theme-color" content="#07080f">
+<title>KeyVault</title>
 <style>
-:root{--bg:#f4f5f7;--card:#fff;--text:#1b1f27;--muted:#667085;--line:#e1e4ea;--accent:#2f6fed;--accent-t:#fff;--danger:#d92d20;--ok:#12a150;--warn:#d99100;box-sizing:border-box}
-@media (prefers-color-scheme:dark){:root{--bg:#111318;--card:#1a1d24;--text:#e8eaf0;--muted:#98a0b3;--line:#2a2f3a;--accent:#5b8cff;--accent-t:#0b1020;--danger:#ff6b5e;--ok:#3ccf7e;--warn:#f0b429}}
+:root{color-scheme:dark;--bg:#07080f;--line:rgba(255,255,255,.13);--line-2:rgba(255,255,255,.24);--text:#eceefb;--muted:#9aa1bd;--accent:#7b8cff;--danger:#ff7a70;--ok:#4ade9a;--warn:#fbbf4a;--grad:linear-gradient(135deg,#6e7dff,#9a5cff);box-sizing:border-box}
 *,*::before,*::after{box-sizing:inherit}
-html,body{height:100%;margin:0}
-body{background:var(--bg);color:var(--text);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+html,body{min-height:100%;margin:0}
+body{background:var(--bg);color:var(--text);font:15px/1.5 Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+.bg{position:fixed;inset:0;z-index:-1;background:
+ radial-gradient(1100px 700px at 10% -10%,rgba(99,102,241,.40),transparent 60%),
+ radial-gradient(900px 600px at 105% 12%,rgba(168,85,247,.30),transparent 60%),
+ radial-gradient(900px 700px at 40% 115%,rgba(14,165,233,.26),transparent 60%),#07080f}
 .hidden{display:none!important}
-main{max-width:720px;margin:0 auto;padding:24px 16px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px}
-h1{font-size:22px;margin:0 0 4px}h2{font-size:18px;margin:0 0 12px}
-.sub{color:var(--muted);margin:0 0 18px}
-label{display:block;font-size:13px;color:var(--muted);margin:12px 0 4px}
-input[type=text],input[type=password],input[type=search],textarea,select{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:9px;background:var(--bg);color:var(--text);font:inherit}
-textarea{resize:vertical;min-height:70px}
-input:focus,textarea:focus,select:focus,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
-button{font:inherit;padding:9px 14px;border-radius:9px;border:1px solid var(--line);background:var(--card);color:var(--text);cursor:pointer}
-button:hover{border-color:var(--accent)}
+main{max-width:760px;margin:0 auto;padding:28px 16px 40px}
+section{animation:rise .35s ease both}
+@keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){section{animation:none}*{transition:none!important}}
+
+.card,dialog{background:linear-gradient(145deg,rgba(255,255,255,.10),rgba(255,255,255,.035));-webkit-backdrop-filter:blur(26px) saturate(170%);backdrop-filter:blur(26px) saturate(170%);border:1px solid var(--line);border-radius:22px;box-shadow:0 24px 60px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.15);color:var(--text)}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.card,dialog{background:rgba(24,26,42,.94)}}
+.card{padding:26px}
+h1{font-size:26px;margin:0;letter-spacing:-.02em}
+h2{font-size:18px;margin:0 0 12px;letter-spacing:-.01em}
+.sub{color:var(--muted);margin:2px 0 0}
+.brand{display:flex;gap:14px;align-items:center;margin-bottom:22px}
+.logo{width:48px;height:48px;border-radius:15px;background:var(--grad);display:grid;place-items:center;box-shadow:0 10px 28px rgba(110,125,255,.5),inset 0 1px 0 rgba(255,255,255,.35);flex:none}
+.logo .ic{width:24px;height:24px;color:#fff}
+.ic{width:1.15em;height:1.15em;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+label{display:block;font-size:13px;color:var(--muted);margin:14px 0 5px}
+input[type=text],input[type=password],input[type=search],textarea,select{width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.055);color:var(--text);font:inherit;transition:border-color .15s,box-shadow .15s,background .15s}
+input::placeholder,textarea::placeholder{color:#6f7692}
+textarea{resize:vertical;min-height:80px}
+input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(123,140,255,.25);background:rgba(255,255,255,.08)}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input[type=range],input[type=checkbox]{accent-color:#8b7bff}
+
+button{font:inherit;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 16px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.07);color:var(--text);cursor:pointer;transition:background .15s,border-color .15s,transform .1s,filter .15s}
+button:hover{background:rgba(255,255,255,.14);border-color:var(--line-2)}
+button:active{transform:scale(.98)}
 button:disabled{opacity:.5;cursor:not-allowed}
-button.primary{background:var(--accent);color:var(--accent-t);border-color:var(--accent);font-weight:600}
+button.primary{background:var(--grad);border-color:transparent;color:#fff;font-weight:600;box-shadow:0 8px 22px rgba(110,125,255,.35),inset 0 1px 0 rgba(255,255,255,.3)}
+button.primary:hover{filter:brightness(1.12);background:var(--grad)}
 button.danger{color:var(--danger)}
-button.small{padding:5px 9px;font-size:13px}
+button.small{padding:6px 11px;font-size:13px;border-radius:10px}
+button.icon{padding:0;width:38px;height:38px;border-radius:11px}
+button.big{padding:14px 18px;font-size:16px;border-radius:14px}
+
 .row{display:flex;gap:10px;align-items:center}
 .row.wrap{flex-wrap:wrap}
-.grow{flex:1}
-.stack{display:grid;gap:10px}
-.drop{border:2px dashed var(--line);border-radius:12px;padding:22px;text-align:center;color:var(--muted)}
-.drop.over{border-color:var(--accent);color:var(--accent)}
-.meter{height:6px;border-radius:3px;background:var(--line);margin-top:6px;overflow:hidden}
-.meter>i{display:block;height:100%;width:0;transition:width .2s,background .2s}
+.grow{flex:1;min-width:0}
+.stack{display:grid;gap:12px}
+.sub.mt{margin-bottom:18px}
+
+.tiles{display:grid;gap:14px;grid-template-columns:1fr 1fr}
+@media (max-width:560px){.tiles{grid-template-columns:1fr}}
+.tile{display:flex;flex-direction:column;align-items:flex-start;gap:14px;text-align:left;padding:20px;border-radius:18px;background:linear-gradient(145deg,rgba(255,255,255,.09),rgba(255,255,255,.03));border:1px solid var(--line);position:relative}
+.tile:hover{transform:translateY(-2px);border-color:rgba(160,170,255,.5);background:linear-gradient(145deg,rgba(255,255,255,.13),rgba(255,255,255,.05))}
+.tico{width:44px;height:44px;border-radius:13px;display:grid;place-items:center;color:#fff}
+.tico .ic{width:22px;height:22px}
+.tico.a{background:linear-gradient(135deg,#22c1ee,#4f7bff)}
+.tico.b{background:linear-gradient(135deg,#7c6bff,#c05cff)}
+.tile b{display:block;font-size:17px}
+.tile .d{color:var(--muted);font-size:13px;font-weight:400}
+.tile .chev{position:absolute;right:16px;top:20px;color:var(--muted)}
+.gbar{margin-top:20px;padding-top:18px;border-top:1px solid var(--line)}
+
+.drop{border:1.5px dashed var(--line-2);border-radius:16px;padding:24px;text-align:center;color:var(--muted);display:grid;gap:10px;justify-items:center;background:rgba(255,255,255,.03);transition:border-color .15s,background .15s}
+.drop .ic{width:28px;height:28px;color:var(--accent)}
+.drop.over{border-color:var(--accent);background:rgba(123,140,255,.12);color:var(--text)}
+.meter{height:6px;border-radius:99px;background:rgba(255,255,255,.1);margin-top:8px;overflow:hidden}
+.meter>i{display:block;height:100%;width:0;border-radius:99px;transition:width .2s,background .2s}
 .hint{font-size:12px;color:var(--muted);margin-top:4px;min-height:16px}
 .err{color:var(--danger);font-size:13px;margin-top:8px;min-height:18px}
-.bar{display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
-.badge{font-size:12px;padding:3px 9px;border-radius:99px;border:1px solid var(--line);color:var(--muted)}
-.badge.dirty{color:var(--warn);border-color:var(--warn)}
-.badge.clean{color:var(--ok);border-color:var(--ok)}
-.entry{display:flex;gap:10px;align-items:center;padding:12px;border:1px solid var(--line);border-radius:11px;margin-bottom:8px;background:var(--card);cursor:pointer}
-.entry:hover{border-color:var(--accent)}
+
+.bar{display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap}
+.bar h2{display:flex;align-items:center;gap:10px;margin:0}
+.badge{font-size:12px;padding:4px 11px;border-radius:99px;border:1px solid var(--line);color:var(--muted);background:rgba(255,255,255,.05);display:inline-flex;align-items:center;gap:7px}
+.badge::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.badge.dirty{color:var(--warn);border-color:rgba(251,191,74,.4)}
+.badge.clean{color:var(--ok);border-color:rgba(74,222,154,.4)}
+.search{position:relative}
+.search .ic{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none}
+.search input{padding-left:40px}
+
+.entry{display:flex;gap:12px;align-items:center;padding:12px 14px;border:1px solid var(--line);border-radius:16px;margin-bottom:10px;background:linear-gradient(145deg,rgba(255,255,255,.07),rgba(255,255,255,.025));-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);cursor:pointer;transition:border-color .15s,transform .12s,background .15s}
+.entry:hover{border-color:rgba(160,170,255,.5);background:linear-gradient(145deg,rgba(255,255,255,.11),rgba(255,255,255,.04));transform:translateY(-1px)}
+.avatar{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-weight:700;font-size:16px;color:#fff;background:var(--grad);flex:none;text-transform:uppercase}
+.avatar.note{background:linear-gradient(135deg,#22c1ee,#4f7bff)}
+.avatar .ic{width:20px;height:20px}
 .entry .t{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.entry .u{color:var(--muted);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.entry .u,.note-snip{color:var(--muted);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .entry .meta{min-width:0;flex:1}
-.empty{text-align:center;color:var(--muted);padding:32px 0}
-dialog{border:1px solid var(--line);border-radius:14px;background:var(--card);color:var(--text);padding:22px;width:min(480px,94vw);max-height:92vh;overflow:auto}
-dialog::backdrop{background:rgba(0,0,0,.5)}
-details{margin-top:10px;border:1px solid var(--line);border-radius:9px;padding:8px 12px}
+.empty{text-align:center;color:var(--muted);padding:40px 0}
+.warn{display:flex;gap:10px;align-items:center;border:1px solid rgba(251,191,74,.4);background:rgba(251,191,74,.08);color:var(--warn);border-radius:12px;padding:10px 13px;font-size:13px;margin-bottom:14px}
+
+dialog{padding:24px;width:min(500px,94vw);max-height:92vh;overflow:auto;margin:auto}
+dialog::backdrop{background:rgba(4,5,12,.6);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+details{margin-top:12px;border:1px solid var(--line);border-radius:12px;padding:10px 14px;background:rgba(255,255,255,.03)}
 summary{cursor:pointer;color:var(--muted);font-size:13px}
-.chk{display:flex;gap:6px;align-items:center;font-size:13px;color:var(--text);margin:6px 12px 0 0}
+.chk{display:flex;gap:7px;align-items:center;font-size:13px;color:var(--text);margin:8px 14px 0 0}
 .chk input{margin:0}
-#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--text);color:var(--bg);padding:9px 16px;border-radius:9px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s;max-width:90vw}
-#toast.on{opacity:1}
-.tile{display:block;width:100%;text-align:left;padding:18px}.tile b{display:block;font-size:17px;margin-bottom:2px}.tile span{color:var(--muted);font-size:13px}
-.warn{border:1px solid var(--warn);color:var(--warn);border-radius:9px;padding:8px 12px;font-size:13px;margin-bottom:12px}
-.note-snip{color:var(--muted);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.gbar{margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
-.foot{text-align:center;color:var(--muted);font-size:12px;margin-top:18px}
+#toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(8px);background:rgba(30,32,52,.85);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);border:1px solid var(--line-2);color:var(--text);padding:10px 18px;border-radius:99px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;max-width:90vw;box-shadow:0 12px 32px rgba(0,0,0,.5);z-index:10}
+#toast.on{opacity:1;transform:translateX(-50%)}
+.foot{text-align:center;color:var(--muted);font-size:12px;margin-top:22px}
 </style>
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
+<!-- Icons: Feather Icons (feathericons.com), MIT license -->
+<symbol id="i-key" viewBox="0 0 24 24"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></symbol>
+<symbol id="i-file" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></symbol>
+<symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></symbol>
+<symbol id="i-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></symbol>
+<symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></symbol>
+<symbol id="i-user" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
+<symbol id="i-eye" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></symbol>
+<symbol id="i-eye-off" viewBox="0 0 24 24"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></symbol>
+<symbol id="i-zap" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></symbol>
+<symbol id="i-trash" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></symbol>
+<symbol id="i-sliders" viewBox="0 0 24 24"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></symbol>
+<symbol id="i-home" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></symbol>
+<symbol id="i-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></symbol>
+<symbol id="i-upload" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></symbol>
+<symbol id="i-cloud" viewBox="0 0 24 24"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></symbol>
+<symbol id="i-logout" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></symbol>
+<symbol id="i-refresh" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></symbol>
+<symbol id="i-back" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></symbol>
+<symbol id="i-chev" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></symbol>
+<symbol id="i-hdd" viewBox="0 0 24 24"><line x1="22" y1="12" x2="2" y2="12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/><line x1="6" y1="16" x2="6.01" y2="16"/><line x1="10" y1="16" x2="10.01" y2="16"/></symbol>
+<symbol id="i-alert" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></symbol>
+<symbol id="i-x" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></symbol>
+</defs></svg>
+<div class="bg" aria-hidden="true"></div>
 <main>
 
 <!-- HOME -->
 <section id="home" class="card">
-  <h1>KeyVault</h1>
-  <p class="sub">Choose what to open.</p>
-  <div class="stack">
-    <button class="tile" id="goNotes"><b>Notes</b><span>Plain notes. Not encrypted.</span></button>
-    <button class="tile" id="goPass"><b>Passwords</b><span>Encrypted vault. Needs master password.</span></button>
+  <div class="brand">
+    <div class="logo"><svg class="ic" aria-hidden="true"><use href="#i-key"/></svg></div>
+    <div><h1>KeyVault</h1><p class="sub">Choose what to open.</p></div>
+  </div>
+  <div class="tiles">
+    <button class="tile" id="goNotes">
+      <span class="tico a"><svg class="ic" aria-hidden="true"><use href="#i-file"/></svg></span>
+      <span><b>Notes</b><span class="d">Plain notes. Not encrypted.</span></span>
+      <svg class="ic chev" aria-hidden="true"><use href="#i-chev"/></svg>
+    </button>
+    <button class="tile" id="goPass">
+      <span class="tico b"><svg class="ic" aria-hidden="true"><use href="#i-shield"/></svg></span>
+      <span><b>Passwords</b><span class="d">Encrypted vault. Needs master password.</span></span>
+      <svg class="ic chev" aria-hidden="true"><use href="#i-chev"/></svg>
+    </button>
   </div>
   <div class="gbar row wrap" id="gBar"></div>
 </section>
@@ -78,37 +166,39 @@ summary{cursor:pointer;color:var(--muted);font-size:13px}
 <!-- NOTES -->
 <section id="notes" class="hidden">
   <div class="bar">
-    <h2 style="margin:0" class="grow">Notes</h2>
+    <h2 class="grow"><svg class="ic" aria-hidden="true"><use href="#i-file"/></svg>Notes</h2>
     <span class="badge" id="nSync">Local only</span>
-    <button id="nExport">Export</button>
-    <button id="nImport">Import</button>
+    <button id="nExport" class="small"><svg class="ic" aria-hidden="true"><use href="#i-download"/></svg>Export</button>
+    <button id="nImport" class="small"><svg class="ic" aria-hidden="true"><use href="#i-upload"/></svg>Import</button>
     <input type="file" id="nFile" accept=".json,application/json" class="hidden">
-    <button id="nHome">Home</button>
+    <button id="nHome" class="icon" title="Home" aria-label="Home"><svg class="ic" aria-hidden="true"><use href="#i-home"/></svg></button>
   </div>
-  <div class="warn">Notes are not encrypted. Do not store passwords or card numbers here.</div>
-  <div class="row" style="margin-bottom:14px">
-    <input type="search" id="nSearch" placeholder="Search notes" class="grow" aria-label="Search notes">
-    <button id="nAdd" class="primary">Add</button>
+  <div class="warn"><svg class="ic" aria-hidden="true"><use href="#i-alert"/></svg><span>Notes are not encrypted. Do not store passwords or card numbers here.</span></div>
+  <div class="row" style="margin-bottom:16px">
+    <div class="search grow"><svg class="ic" aria-hidden="true"><use href="#i-search"/></svg><input type="search" id="nSearch" placeholder="Search notes" aria-label="Search notes"></div>
+    <button id="nAdd" class="primary"><svg class="ic" aria-hidden="true"><use href="#i-plus"/></svg>Add</button>
   </div>
   <div id="nList"></div>
 </section>
 
 <!-- START -->
 <section id="start" class="card hidden">
-  <h1>KeyVault</h1>
-  <p class="sub">Offline encrypted vault. Everything stays in your browser and in your .key file.</p>
+  <div class="brand">
+    <div class="logo"><svg class="ic" aria-hidden="true"><use href="#i-shield"/></svg></div>
+    <div><h1>Passwords</h1><p class="sub">Encrypted in your browser. Saved to Google Drive or a .key file.</p></div>
+  </div>
   <div class="stack">
-    <button class="primary" id="btnNew">Create new vault</button>
-    <button id="btnDrive" class="hidden">Open vault from Google Drive</button>
+    <button class="primary big" id="btnNew"><svg class="ic" aria-hidden="true"><use href="#i-plus"/></svg>Create new vault</button>
+    <button id="btnDrive" class="big hidden"><svg class="ic" aria-hidden="true"><use href="#i-cloud"/></svg>Open vault from Google Drive</button>
     <div class="drop" id="drop">
+      <svg class="ic" aria-hidden="true"><use href="#i-upload"/></svg>
       <div>Drop a <b>.key</b> file here</div>
-      <div style="margin:8px 0">or</div>
-      <button id="btnOpen">Open .key file</button>
+      <button id="btnOpen"><svg class="ic" aria-hidden="true"><use href="#i-file"/></svg>Open .key file</button>
       <input type="file" id="fileIn" accept=".key,application/json" class="hidden">
     </div>
   </div>
   <div class="err" id="startErr" role="alert"></div>
-  <button id="startHome">Back</button>
+  <button id="startHome"><svg class="ic" aria-hidden="true"><use href="#i-back"/></svg>Back</button>
 </section>
 
 <!-- SETUP -->
@@ -122,39 +212,46 @@ summary{cursor:pointer;color:var(--muted);font-size:13px}
   <label for="npw2">Confirm password</label>
   <input type="password" id="npw2" autocomplete="new-password">
   <div class="err" id="setupErr" role="alert"></div>
-  <div class="row" style="margin-top:12px">
-    <button id="setupBack">Back</button>
-    <button class="primary grow" id="setupGo">Create vault</button>
+  <div class="row" style="margin-top:14px">
+    <button id="setupBack"><svg class="ic" aria-hidden="true"><use href="#i-back"/></svg>Back</button>
+    <button class="primary grow" id="setupGo"><svg class="ic" aria-hidden="true"><use href="#i-lock"/></svg>Create vault</button>
   </div>
 </section>
 
 <!-- UNLOCK -->
 <section id="unlock" class="card hidden">
-  <h2>Unlock vault</h2>
-  <p class="sub" id="unlockFile"></p>
+  <div class="brand">
+    <div class="logo"><svg class="ic" aria-hidden="true"><use href="#i-lock"/></svg></div>
+    <div><h1>Unlock vault</h1><p class="sub" id="unlockFile"></p></div>
+  </div>
   <label for="upw">Master password</label>
   <input type="password" id="upw" autocomplete="current-password">
   <div class="err" id="unlockErr" role="alert"></div>
-  <div class="row" style="margin-top:12px">
-    <button id="unlockBack">Close vault</button>
-    <button class="primary grow" id="unlockGo">Unlock</button>
+  <div class="row" style="margin-top:14px">
+    <button id="unlockBack"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg>Close vault</button>
+    <button class="primary grow" id="unlockGo"><svg class="ic" aria-hidden="true"><use href="#i-key"/></svg>Unlock</button>
   </div>
 </section>
 
 <!-- VAULT -->
 <section id="vault" class="hidden">
   <div class="bar">
-    <h2 style="margin:0" class="grow" id="vname">Vault</h2>
+    <h2 class="grow"><svg class="ic" aria-hidden="true"><use href="#i-shield"/></svg><span id="vname">Vault</span></h2>
     <span class="badge" id="dirtyBadge">Saved</span>
-    <button id="btnSave" class="primary">Save .key</button>
-    <button id="btnDl" class="hidden">Download</button>
-    <button id="btnSettings">Settings</button>
-    <button id="btnLock">Lock</button>
-    <button id="btnHome">Home</button>
   </div>
-  <div class="row" style="margin-bottom:14px">
-    <input type="search" id="search" placeholder="Search site, username, notes" class="grow" aria-label="Search">
-    <button id="btnAdd" class="primary">Add</button>
+  <div class="bar">
+    <button id="btnAuto" class="small hidden"><svg class="ic" aria-hidden="true"><use href="#i-cloud"/></svg><span class="lbl">Auto-save: On</span></button>
+    <button id="btnSave" class="small primary hidden"><svg class="ic" aria-hidden="true"><use href="#i-upload"/></svg>Save to Drive</button>
+    <button id="btnDl" class="small"><svg class="ic" aria-hidden="true"><use href="#i-hdd"/></svg>Save to device</button>
+    <button id="btnReconnect" class="small hidden"><svg class="ic" aria-hidden="true"><use href="#i-refresh"/></svg>Reconnect Google</button>
+    <span class="grow"></span>
+    <button id="btnSettings" class="icon" title="Settings" aria-label="Settings"><svg class="ic" aria-hidden="true"><use href="#i-sliders"/></svg></button>
+    <button id="btnLock" class="icon" title="Lock" aria-label="Lock"><svg class="ic" aria-hidden="true"><use href="#i-lock"/></svg></button>
+    <button id="btnHome" class="icon" title="Home" aria-label="Home"><svg class="ic" aria-hidden="true"><use href="#i-home"/></svg></button>
+  </div>
+  <div class="row" style="margin-bottom:16px">
+    <div class="search grow"><svg class="ic" aria-hidden="true"><use href="#i-search"/></svg><input type="search" id="search" placeholder="Search site, username, notes" aria-label="Search"></div>
+    <button id="btnAdd" class="primary"><svg class="ic" aria-hidden="true"><use href="#i-plus"/></svg>Add</button>
   </div>
   <div id="list"></div>
 </section>
@@ -172,13 +269,13 @@ summary{cursor:pointer;color:var(--muted);font-size:13px}
   <label for="fPass">Password</label>
   <div class="row">
     <input type="password" id="fPass" class="grow" autocomplete="new-password">
-    <button id="fShow" class="small">Show</button>
-    <button id="fGen" class="small">Generate</button>
+    <button id="fShow" class="icon" title="Show password" aria-label="Show password"><svg class="ic" aria-hidden="true"><use href="#i-eye"/></svg></button>
+    <button id="fGen" class="icon" title="Generate password" aria-label="Generate password"><svg class="ic" aria-hidden="true"><use href="#i-zap"/></svg></button>
   </div>
   <div class="meter"><i id="fmeter"></i></div>
   <details>
     <summary>Generator options</summary>
-    <div class="row" style="margin-top:8px">
+    <div class="row" style="margin-top:10px">
       <label for="gLen" style="margin:0">Length: <b id="gLenV">20</b></label>
       <input type="range" id="gLen" min="8" max="64" value="20" class="grow">
     </div>
@@ -192,11 +289,11 @@ summary{cursor:pointer;color:var(--muted);font-size:13px}
   <label for="fNotes">Notes</label>
   <textarea id="fNotes"></textarea>
   <div class="err" id="entryErr" role="alert"></div>
-  <div class="row" style="margin-top:12px">
-    <button id="fDel" class="danger">Delete</button>
+  <div class="row" style="margin-top:14px">
+    <button id="fDel" class="danger"><svg class="ic" aria-hidden="true"><use href="#i-trash"/></svg>Delete</button>
     <span class="grow"></span>
     <button id="fCancel">Cancel</button>
-    <button id="fSave" class="primary">OK</button>
+    <button id="fSave" class="primary"><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg>Save</button>
   </div>
 </dialog>
 
@@ -206,13 +303,13 @@ summary{cursor:pointer;color:var(--muted);font-size:13px}
   <label for="nTitle">Title</label>
   <input type="text" id="nTitle" autocomplete="off">
   <label for="nText">Note</label>
-  <textarea id="nText" style="min-height:180px"></textarea>
+  <textarea id="nText" style="min-height:200px"></textarea>
   <div class="err" id="noteErr" role="alert"></div>
-  <div class="row" style="margin-top:12px">
-    <button id="nDel" class="danger">Delete</button>
+  <div class="row" style="margin-top:14px">
+    <button id="nDel" class="danger"><svg class="ic" aria-hidden="true"><use href="#i-trash"/></svg>Delete</button>
     <span class="grow"></span>
     <button id="nCancel">Cancel</button>
-    <button id="nSave" class="primary">OK</button>
+    <button id="nSave" class="primary"><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg>Save</button>
   </div>
 </dialog>
 
@@ -227,7 +324,7 @@ summary{cursor:pointer;color:var(--muted);font-size:13px}
     <option value="30">30 minutes</option>
     <option value="0">Never</option>
   </select>
-  <h2 style="margin-top:22px">Change master password</h2>
+  <h2 style="margin-top:24px">Change master password</h2>
   <label for="cpOld">Current password</label>
   <input type="password" id="cpOld" autocomplete="current-password">
   <label for="cpNew">New password</label>
@@ -236,8 +333,8 @@ summary{cursor:pointer;color:var(--muted);font-size:13px}
   <label for="cpNew2">Confirm new password</label>
   <input type="password" id="cpNew2" autocomplete="new-password">
   <div class="err" id="setErr" role="alert"></div>
-  <div class="row" style="margin-top:12px">
-    <button id="cpGo">Change password</button>
+  <div class="row" style="margin-top:14px">
+    <button id="cpGo"><svg class="ic" aria-hidden="true"><use href="#i-key"/></svg>Change password</button>
     <span class="grow"></span>
     <button id="setClose" class="primary">Done</button>
   </div>
@@ -266,6 +363,11 @@ function el(tag, props = {}, ...kids) {
   return e;
 }
 
+function icon(n) {
+  const NS = 'http://www.w3.org/2000/svg';
+  const sv = document.createElementNS(NS, 'svg'); sv.setAttribute('class', 'ic'); sv.setAttribute('aria-hidden', 'true');
+  const u = document.createElementNS(NS, 'use'); u.setAttribute('href', '#i-' + n); sv.append(u); return sv;
+}
 let toastT;
 function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), 2200); }
 
@@ -295,7 +397,7 @@ async function open(f, pw) {
 }
 
 /* ---------- state ---------- */
-const S = { entries: [], settings: { autoLock: 5 }, pw: null, fileObj: null, fileName: 'myvault.key', dirty: false, editId: null, fails: 0, drive: false, remoteMod: null };
+const S = { entries: [], settings: { autoLock: 5 }, pw: null, fileObj: null, fileName: 'myvault.key', dirty: false, editId: null, fails: 0, drive: false, remoteMod: null, rev: 0, failed: false };
 
 function show(id) {
   ['home', 'notes', 'start', 'setup', 'unlock', 'vault'].forEach(s => $('#' + s).classList.toggle('hidden', s !== id));
@@ -389,10 +491,17 @@ function enterVault() {
   show('vault'); render(); updateDirty();
 }
 function updateDirty() {
-  updateSaveLabel();
+  if (S.dirty) { S.rev++; S.failed = false; }
+  updateSaveLabel(); badge(); scheduleAuto();
+}
+function badge() {
   const b = $('#dirtyBadge');
-  b.textContent = S.dirty ? 'Unsaved changes' : 'Saved';
-  b.className = 'badge ' + (S.dirty ? 'dirty' : 'clean');
+  let t, c;
+  if (saving) { t = 'Saving to Drive...'; c = 'dirty'; }
+  else if (S.dirty && S.failed) { t = 'Not saved to Drive'; c = 'dirty'; }
+  else if (S.dirty) { t = autoOn() ? 'Saving soon...' : 'Unsaved changes'; c = 'dirty'; }
+  else { t = (S.drive && D.signed) ? 'Saved to Drive' : 'Saved'; c = 'clean'; }
+  b.textContent = t; b.className = 'badge ' + c;
 }
 function render() {
   const q = $('#search').value.trim().toLowerCase(), list = $('#list');
@@ -402,9 +511,10 @@ function render() {
   if (!items.length) { list.append(el('div', { class: 'empty' }, S.entries.length ? 'No matches.' : 'No entries yet. Click Add.')); return; }
   items.forEach(e => {
     const row = el('div', { class: 'entry', tabindex: '0', onclick: () => openEntry(e.id), onkeydown: ev => { if (ev.key === 'Enter') openEntry(e.id); } },
+      el('div', { class: 'avatar' }, (e.site || '?').trim().charAt(0) || '?'),
       el('div', { class: 'meta' }, el('div', { class: 't' }, e.site || '(no site)'), el('div', { class: 'u' }, e.username || '')),
-      el('button', { class: 'small', onclick: ev => { ev.stopPropagation(); copy(e.username, 'Username'); } }, 'User'),
-      el('button', { class: 'small', onclick: ev => { ev.stopPropagation(); copy(e.password, 'Password'); } }, 'Pass'));
+      el('button', { class: 'icon', title: 'Copy username', 'aria-label': 'Copy username', onclick: ev => { ev.stopPropagation(); copy(e.username, 'Username'); } }, icon('user')),
+      el('button', { class: 'icon', title: 'Copy password', 'aria-label': 'Copy password', onclick: ev => { ev.stopPropagation(); copy(e.password, 'Password'); } }, icon('copy')));
     list.append(row);
   });
 }
@@ -427,7 +537,7 @@ function openEntry(id) {
   $('#entryTitle').textContent = id ? 'Edit entry' : 'New entry';
   $('#fSite').value = e.site || ''; $('#fUser').value = e.username || '';
   $('#fPass').value = e.password || ''; $('#fNotes').value = e.notes || '';
-  $('#fPass').type = 'password'; $('#fShow').textContent = 'Show';
+  setShow(false);
   $('#fPass').dispatchEvent(new Event('input'));
   $('#entryErr').textContent = '';
   $('#fDel').classList.toggle('hidden', !id);
@@ -435,10 +545,15 @@ function openEntry(id) {
 }
 $('#btnAdd').onclick = () => openEntry();
 $('#fCancel').onclick = () => dlg.close();
-$('#fShow').onclick = () => { const p = $('#fPass'), s = p.type === 'password'; p.type = s ? 'text' : 'password'; $('#fShow').textContent = s ? 'Hide' : 'Show'; };
+function setShow(v) {
+  $('#fPass').type = v ? 'text' : 'password';
+  $('#fShow use').setAttribute('href', v ? '#i-eye-off' : '#i-eye');
+  $('#fShow').setAttribute('aria-label', v ? 'Hide password' : 'Show password');
+}
+$('#fShow').onclick = () => setShow($('#fPass').type === 'password');
 $('#fGen').onclick = () => {
   const p = genPass(); if (!p) { $('#entryErr').textContent = 'Select at least one character type.'; return; }
-  $('#entryErr').textContent = ''; $('#fPass').value = p; $('#fPass').type = 'text'; $('#fShow').textContent = 'Hide';
+  $('#entryErr').textContent = ''; $('#fPass').value = p; setShow(true);
   $('#fPass').dispatchEvent(new Event('input'));
 };
 $('#gLen').oninput = () => $('#gLenV').textContent = $('#gLen').value;
@@ -474,6 +589,13 @@ $('#fDel').onclick = () => {
 };
 
 /* ---------- save / lock ---------- */
+/* ---------- saving: auto to Drive, or manual ---------- */
+const PK = 'keyvault_prefs_v1';
+let prefs = { autoSave: true, hint: false, email: '' }, saving = false, again = false, asT;
+try { Object.assign(prefs, JSON.parse(localStorage.getItem(PK) || '{}')); } catch {}
+function savePrefs() { try { localStorage.setItem(PK, JSON.stringify(prefs)); } catch {} }
+function autoOn() { return D.signed && prefs.autoSave && S.pw !== null; }
+
 function downloadKey(file) {
   const blob = new Blob([JSON.stringify(file, null, 2)], { type: 'application/json' });
   const a = el('a', { href: URL.createObjectURL(blob), download: S.fileName });
@@ -481,32 +603,61 @@ function downloadKey(file) {
   setTimeout(() => URL.revokeObjectURL(a.href), 5000);
 }
 function updateSaveLabel() {
-  $('#btnSave').textContent = D.signed ? 'Save to Drive' : 'Save .key';
-  $('#btnDl').classList.toggle('hidden', !D.signed);
+  $('#btnAuto').classList.toggle('hidden', !D.signed);
+  $('#btnAuto .lbl').textContent = 'Auto-save: ' + (prefs.autoSave ? 'On' : 'Off');
+  $('#btnSave').classList.toggle('hidden', !(D.signed && !prefs.autoSave));
+  $('#btnDl').classList.toggle('primary', !D.signed);
+  $('#btnReconnect').classList.toggle('hidden', D.signed || !prefs.hint);
 }
+async function saveToDrive() {
+  const r = S.rev;
+  const file = await seal({ entries: S.entries, settings: S.settings }, S.pw);
+  const ex = await dFind('vault.key');
+  if (ex) {
+    if (!S.drive) { if (!confirm('A vault already exists on Google Drive. Replace it with this one?')) return false; }
+    else if (S.remoteMod && ex.modifiedTime !== S.remoteMod) { if (!confirm('The Drive vault was changed somewhere else. Overwrite it?')) return false; }
+  }
+  const res = await dWrite('vault.key', JSON.stringify(file, null, 2), ex && ex.id);
+  S.remoteMod = res.modifiedTime; S.drive = true; S.fileObj = file;
+  if (S.rev === r) S.dirty = false;
+  return true;
+}
+function scheduleAuto() {
+  if (!autoOn() || !S.dirty || S.failed) return;
+  clearTimeout(asT); asT = setTimeout(runAuto, 1500);
+}
+async function runAuto() {
+  if (!autoOn() || !S.dirty) return;
+  if (saving) { again = true; return; }
+  saving = true; S.failed = false; badge();
+  try { if (!(await saveToDrive())) S.failed = true; } catch { S.failed = true; }
+  saving = false; badge();
+  if (again) { again = false; scheduleAuto(); }
+}
+$('#btnAuto').onclick = () => {
+  prefs.autoSave = !prefs.autoSave; savePrefs(); S.failed = false;
+  updateSaveLabel(); badge(); toast('Auto-save ' + (prefs.autoSave ? 'on' : 'off'));
+  if (prefs.autoSave) scheduleAuto();
+};
 $('#btnSave').onclick = async () => {
   const btn = $('#btnSave'); btn.disabled = true;
-  try {
-    const file = await seal({ entries: S.entries, settings: S.settings }, S.pw);
-    if (D.signed) {
-      const ex = await dFind('vault.key');
-      if (ex) {
-        if (!S.drive) { if (!confirm('A vault already exists on Google Drive. Replace it with this one?')) return; }
-        else if (S.remoteMod && ex.modifiedTime !== S.remoteMod) { if (!confirm('The Drive vault was changed somewhere else. Overwrite it?')) return; }
-      }
-      const res = await dWrite('vault.key', JSON.stringify(file, null, 2), ex && ex.id);
-      S.remoteMod = res.modifiedTime; S.drive = true; S.fileObj = file; S.dirty = false; updateDirty(); toast('Saved to Google Drive');
-    } else {
-      S.fileObj = file; downloadKey(file); S.dirty = false; updateDirty(); toast('Saved ' + S.fileName);
-    }
-  } catch { toast(D.signed ? 'Drive save failed. Use Download' : 'Save failed'); }
+  try { if (await saveToDrive()) { S.failed = false; updateDirty(); toast('Saved to Google Drive'); } }
+  catch { toast('Drive save failed. Use Save to device'); }
   finally { btn.disabled = false; }
 };
 $('#btnDl').onclick = async () => {
-  try { downloadKey(await seal({ entries: S.entries, settings: S.settings }, S.pw)); toast('Downloaded ' + S.fileName); } catch { toast('Download failed'); }
+  try {
+    const file = await seal({ entries: S.entries, settings: S.settings }, S.pw);
+    downloadKey(file);
+    if (!(D.signed && S.drive)) { S.fileObj = file; S.dirty = false; updateDirty(); }
+    toast('Saved to device');
+  } catch { toast('Save failed'); }
 };
+$('#btnReconnect').onclick = () => signIn(true);
+
 async function lock() {
   if (S.pw === null) return;
+  if (autoOn() && S.dirty) { clearTimeout(asT); try { await saveToDrive(); } catch {} }
   try { S.fileObj = await seal({ entries: S.entries, settings: S.settings }, S.pw); } catch { return; }
   if (dlg.open) dlg.close(); if ($('#setDlg').open) $('#setDlg').close();
   S.entries = []; S.pw = null;
@@ -588,6 +739,7 @@ function renderNotes() {
     .sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''));
   if (!items.length) { list.append(el('div', { class: 'empty' }, notes.some(n => !n.deleted) ? 'No matches.' : 'No notes yet. Click Add.')); return; }
   items.forEach(n => list.append(el('div', { class: 'entry', tabindex: '0', onclick: () => openNote(n.id), onkeydown: ev => { if (ev.key === 'Enter') openNote(n.id); } },
+    el('div', { class: 'avatar note' }, icon('file')),
     el('div', { class: 'meta' }, el('div', { class: 't' }, n.title || '(untitled)'), el('div', { class: 'note-snip' }, (n.text || '').split('\n')[0])))));
 }
 $('#nSearch').addEventListener('input', renderNotes);
@@ -646,7 +798,7 @@ function loadGIS() {
     document.head.append(sc);
   });
 }
-function requestToken(prompt) {
+function requestToken(prompt, hint) {
   return loadGIS().then(() => new Promise((res, rej) => {
     D.pending = { res, rej };
     if (!D.client) D.client = google.accounts.oauth2.initTokenClient({
@@ -658,7 +810,7 @@ function requestToken(prompt) {
       },
       error_callback: e => { const p = D.pending; D.pending = null; if (p) p.rej(new Error((e && e.type) || 'popup')); }
     });
-    D.client.requestAccessToken({ prompt });
+    D.client.requestAccessToken(hint ? { prompt, hint } : { prompt });
   }));
 }
 async function ensureToken() {
@@ -690,25 +842,31 @@ async function dWrite(name, text, id) {
     { method: 'POST', headers: { 'Content-Type': 'multipart/related; boundary=' + bd }, body })).json();
 }
 
-async function signIn() {
+async function signIn(reconnect) {
   try {
-    await requestToken('select_account');
+    if (reconnect && prefs.email) await requestToken('', prefs.email);
+    else await requestToken(reconnect ? '' : 'select_account');
     D.signed = true;
-    try { const j = await (await api('https://www.googleapis.com/drive/v3/about?fields=user(emailAddress)')).json(); D.email = j.user.emailAddress; } catch { D.email = ''; }
-    renderAuth(); updateSaveLabel(); toast('Signed in');
+    try { const j = await (await api('https://www.googleapis.com/drive/v3/about?fields=user(emailAddress)')).json(); D.email = j.user.emailAddress; } catch { D.email = prefs.email || ''; }
+    prefs.hint = true; prefs.email = D.email; savePrefs();
+    renderAuth(); updateSaveLabel(); badge(); toast('Signed in');
+    S.failed = false; scheduleAuto();
+    if (!$('#notes').classList.contains('hidden')) syncNotes();
   } catch { toast('Sign-in failed or cancelled'); }
 }
 function signOut() {
   try { if (D.token && window.google) google.accounts.oauth2.revoke(D.token, () => {}); } catch {}
   D.token = null; D.signed = false; D.email = ''; S.drive = false; S.remoteMod = null;
-  clearTimeout(pushT); setSync('');
-  renderAuth(); updateSaveLabel(); toast('Signed out');
+  prefs.hint = false; prefs.email = ''; savePrefs();
+  clearTimeout(pushT); clearTimeout(asT); setSync('');
+  renderAuth(); updateSaveLabel(); badge(); toast('Signed out');
 }
 function renderAuth() {
   const bar = $('#gBar'); bar.replaceChildren();
-  if (!driveOK) bar.append(el('span', { class: 'sub', style: 'margin:0' }, 'Google sign-in works only on the website link.'));
-  else if (!D.signed) bar.append(el('button', { onclick: signIn }, 'Sign in with Google'), el('span', { class: 'hint grow' }, 'Optional. Syncs Notes and Passwords to your Google Drive.'));
-  else bar.append(el('span', { class: 'grow' }, 'Signed in' + (D.email ? ' as ' + D.email : '')), el('button', { class: 'small', onclick: signOut }, 'Sign out'));
+  if (!driveOK) bar.append(el('span', { class: 'hint grow' }, 'Google sign-in works only on the website link.'));
+  else if (D.signed) bar.append(el('span', { class: 'grow' }, 'Signed in' + (D.email ? ' as ' + D.email : '')), el('button', { class: 'small', onclick: signOut }, icon('logout'), 'Sign out'));
+  else if (prefs.hint) bar.append(el('button', { onclick: () => signIn(true) }, icon('refresh'), 'Reconnect Google' + (prefs.email ? ' (' + prefs.email + ')' : '')), el('button', { class: 'small', onclick: () => signIn(false) }, 'Use another account'));
+  else bar.append(el('button', { onclick: () => signIn(false) }, icon('cloud'), 'Sign in with Google'), el('span', { class: 'hint grow' }, 'Optional. Auto-saves Notes and Passwords to your Google Drive.'));
   $('#btnDrive').classList.toggle('hidden', !D.signed);
 }
 $('#btnDrive').onclick = async () => {
